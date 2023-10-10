@@ -1,0 +1,35 @@
+plugins {
+    id 'java'
+    id "application"
+    id 'com.github.johnrengelman.shadow' version '7.0.0'
+//    id 'com.sedmelluq.jdaction' version '1.0.2'
+}
+
+group 'pl.cheily'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+    implementation("net.dv8tion:JDA:5.0.0-beta.15") {
+        exclude module: 'opus-java'
+    }
+    implementation 'ch.qos.logback:logback-classic:1.3.5'
+    implementation 'com.moandjiezana.toml:toml4j:0.7.2'
+}
+
+compileJava.options.encoding = 'UTF-8'
+compileTestJava.options.encoding = 'UTF-8'
+
+test {
+    useJUnitPlatform()
+}
+
+shadowJar {
+    archiveName = 'HeartBlazer.jar'
+    applicationName = 'HeartBlazer'
+}

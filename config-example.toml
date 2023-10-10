@@ -1,0 +1,7 @@
+version = "1.0.0"
+message_commands_on = true
+prefix = "^"
+token = "YOUR TOKEN HERE"
+owner = "302388837525487617"
+owner_bypass = true
+administrators = []

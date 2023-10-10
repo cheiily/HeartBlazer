@@ -1,0 +1,9 @@
+package pl.cheily.Actions;
+
+public enum ActionRequestType {
+    MESSAGE_RECEIVED,
+    MESSAGE_EMOJI_REACTION,
+    SLASH_COMMAND,
+    MESSAGE_CONTEXT_INTERACTION,
+    USER_CONTEXT_INTERACTION
+}
