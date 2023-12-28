@@ -27,7 +27,7 @@ public class HeartBlazer {
                 .build();
 
         jda.updateCommands().addCommands(
-                Commands.message("Pin (thread-only)"),
+                Commands.message("Pin | Unpin (thread-only)"),
                 Commands.slash("ping", "Returns the current gateway ping as well as real response delay.")
         ).queue(
                 cmds -> logger.debug(mBotFeedback, "Loaded interactions: " + cmds.toString())

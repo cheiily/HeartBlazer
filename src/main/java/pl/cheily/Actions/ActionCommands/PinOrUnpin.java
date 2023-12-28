@@ -11,7 +11,6 @@ import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import pl.cheily.Actions.*;
-import pl.cheily.Config;
 
 import java.util.Set;
 
@@ -20,10 +19,10 @@ import static pl.cheily.Actions.ActionRequestType.MESSAGE_EMOJI_REACTION;
 import static pl.cheily.Actions.AuthorizationResult.ACCEPT;
 import static pl.cheily.Actions.AuthorizationResult.DENY;
 
-public class Pin extends Action {
-    private Pin() {
-        name = "pin";
-        helpNames = Set.of("Pin (thread-only)");
+public class PinOrUnpin extends Action {
+    private PinOrUnpin() {
+        name = "pin | unpin";
+        helpNames = Set.of("Pin | Unpin (thread-only)");
         acceptedRequestTypes = Set.of(
                 MESSAGE_EMOJI_REACTION,
                 MESSAGE_CONTEXT_INTERACTION
@@ -32,10 +31,10 @@ public class Pin extends Action {
         listenedEmoji = Set.of(pushpin);
     }
 
-    private static Pin _instance;
+    private static PinOrUnpin _instance;
 
-    public static Pin instance() {
-        if ( _instance == null ) _instance = new Pin();
+    public static PinOrUnpin instance() {
+        if ( _instance == null ) _instance = new PinOrUnpin();
         return _instance;
     }
 
@@ -110,11 +109,20 @@ public class Pin extends Action {
         MessageReaction finalTriggerReaction = triggerReaction;
         User finalTriggerUser = triggerUser;
 
-        if ( message.isPinned() && requestType == MESSAGE_EMOJI_REACTION ) {
-            respond(message, white_exclamation_mark, request, finalTriggerReaction, triggerUser);
-            return ActionResult.SUCCESS_ACCEPT("Message already pinned.");
-        }
+        if ( message.isPinned() ) {
+            message.unpin().queue(
+                unused -> {
+                    LogContext.minorSuccess(name, request, "Unpinned target message.").log();
+                    respond(finalMessage, white_checkmark, request, finalTriggerReaction, finalTriggerUser);
+                },
+                throwable -> {
+                    LogContext.failure(name, request, finalTriggerUser, channel, "Failed to unpin target message.", throwable).log();
+                    respond(finalMessage, exclamation_mark, request, finalTriggerReaction, finalTriggerUser);
+                }
+            );
 
+            return ActionResult.SUCCESS_ACCEPT("Unpinned.");
+        }
 
         message.pin().queue(
                 unused -> {
@@ -126,7 +134,6 @@ public class Pin extends Action {
                     respond(finalMessage, exclamation_mark, request, finalTriggerReaction, finalTriggerUser);
                 }
         );
-
         return ActionResult.SUCCESS_ACCEPT;
     }
 

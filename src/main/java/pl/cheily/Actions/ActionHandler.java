@@ -10,7 +10,7 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import pl.cheily.Actions.ActionCommands.Sleep;
-import pl.cheily.Actions.ActionCommands.Pin;
+import pl.cheily.Actions.ActionCommands.PinOrUnpin;
 import pl.cheily.Actions.ActionCommands.Ping;
 import pl.cheily.Config;
 
@@ -25,7 +25,7 @@ public class ActionHandler {
 
     {
         actions.add(Ping.instance());
-        actions.add(Pin.instance());
+        actions.add(PinOrUnpin.instance());
         actions.add(Sleep.instance());
     }
 
