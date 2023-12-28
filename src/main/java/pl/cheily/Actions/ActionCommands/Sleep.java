@@ -22,7 +22,7 @@ public class Sleep extends Action {
     }
 
     @Override
-    public AuthorizationResult uniqueAuthorize(GenericEvent request, JDA jda) {
+    public AuthorizationResult authorizeUser(GenericEvent request, JDA jda) {
         if (!((MessageReceivedEvent) request).getAuthor().getId().equals(Config.ownerId))
             return AuthorizationResult.DENY("Author must be bot owner.");
 

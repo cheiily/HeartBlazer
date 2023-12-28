@@ -46,34 +46,39 @@ public class Pin extends Action {
     private static final Emoji exclamation_mark = Emoji.fromUnicode("❗");
 
     @Override
-    public AuthorizationResult uniqueAuthorize(GenericEvent request, JDA jda) {
+    public AuthorizationResult authorizeContext(GenericEvent request, JDA jda) {
         if ( request instanceof MessageReactionAddEvent cRequest ) {
             if ( !cRequest.getChannelType().equals(ChannelType.GUILD_PRIVATE_THREAD)
                     && !cRequest.getChannelType().equals(ChannelType.GUILD_PUBLIC_THREAD)
             ) {
-                respond(cRequest.retrieveMessage().complete(), cross, request, cRequest.getReaction(), cRequest.getUser());
                 return DENY("Incorrect channel type - not a thread.");
-            }
-
-            String authorId = cRequest.getUserId();
-            if ( !authorId.equals(cRequest.getChannel().asThreadChannel().getOwnerId())
-                    && !authorId.equals(Config.ownerId)
-            ) {
-                respond(cRequest.retrieveMessage().complete(), cross, request, cRequest.getReaction(), cRequest.getUser());
-                return DENY("Author is not the thread owner.");
             }
         } else if ( request instanceof MessageContextInteractionEvent cRequest ) {
             if ( !cRequest.getChannelType().equals(ChannelType.GUILD_PRIVATE_THREAD)
                     && !cRequest.getChannelType().equals(ChannelType.GUILD_PUBLIC_THREAD)
             ) return DENY("Incorrect channel type - not a thread.");
-
-            String authorId = cRequest.getUser().getId();
-            if ( !authorId.equals(cRequest.getChannel().asThreadChannel().getOwnerId())
-                    && !authorId.equals(Config.ownerId)
-            ) return DENY("Author is not the thread owner.");
-
         }
 
+        return ACCEPT();
+    }
+
+    @Override
+    public AuthorizationResult authorizeUser(GenericEvent request, JDA jda, AuthorizationResult currentAuthState) {
+        if ( request instanceof MessageReactionAddEvent cRequest ) {
+            String authorId = cRequest.getUserId();
+
+            if ( !authorId.equals(cRequest.getChannel().asThreadChannel().getOwnerId()) ) {
+                if ( !currentAuthState.and(DENY("")).isAccept() )
+                    respond(cRequest.retrieveMessage().complete(), cross, request, cRequest.getReaction(), cRequest.getUser());
+
+                return DENY("Author is not the thread owner.");
+            }
+        } else if ( request instanceof MessageContextInteractionEvent cRequest ) {
+            String authorId = cRequest.getUser().getId();
+
+            if ( !authorId.equals(cRequest.getChannel().asThreadChannel().getOwnerId()) )
+                return DENY("Author is not the thread owner.");
+        }
         return ACCEPT();
     }
 

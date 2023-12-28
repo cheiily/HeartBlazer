@@ -18,8 +18,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static pl.cheily.Actions.AuthorizationResult.ACCEPT;
-import static pl.cheily.Actions.AuthorizationResult.DENY;
+import static pl.cheily.Actions.AuthorizationResult.*;
 
 public class ActionHandler {
     private final Set<Action> actions = new HashSet<>();
@@ -39,7 +38,7 @@ public class ActionHandler {
         if ( found.isEmpty() ) return;
         Action action = found.get(0);
 
-        if ( !tryAuthorize(request, request.getUser(), request.isFromGuild() ? request.getMember() : null, request.getChannel(), action) ) {
+        if ( !authorizeWithContext(request, request.getUser(), request.isFromGuild() ? request.getMember() : null, request.getChannel(), action, ActionRequestType.MESSAGE_CONTEXT_INTERACTION) ) {
             ActionResult result = ActionResult.SUCCESS_DENY;
             request.reply(result.description()).setEphemeral(true).queue(
                     interactionHook -> LogContext.minorSuccess(action.name, request, "Sent general handler reply.").log(),
@@ -65,7 +64,7 @@ public class ActionHandler {
         if ( found.isEmpty() ) return;
         Action action = found.get(0);
 
-        if ( !tryAuthorize(request, request.getUser(), request.isFromGuild() ? request.getMember() : null, request.getChannel(), action) )
+        if ( !authorizeWithContext(request, request.getUser(), request.isFromGuild() ? request.getMember() : null, request.getChannel(), action, ActionRequestType.MESSAGE_EMOJI_REACTION) )
             return;
 
         action.call(request, ActionRequestType.MESSAGE_EMOJI_REACTION)
@@ -81,7 +80,7 @@ public class ActionHandler {
         if ( found.isEmpty() ) return;
         Action action = found.get(0);
 
-        if ( !tryAuthorize(request, request.getUser(), request.isFromGuild() ? request.getMember() : null, request.getChannel(), action) )
+        if ( !authorizeWithContext(request, request.getUser(), request.isFromGuild() ? request.getMember() : null, request.getChannel(), action, ActionRequestType.SLASH_COMMAND) )
             return;
 
         ActionResult result = action.call(request, ActionRequestType.SLASH_COMMAND);
@@ -97,24 +96,39 @@ public class ActionHandler {
         if ( found.isEmpty() ) return;
         Action action = found.get(0);
 
-        if ( !tryAuthorize(request, request.getAuthor(), request.isFromGuild() ? request.getMember() : null, request.getChannel(), action) )
+        if ( !authorizeWithContext(request, request.getAuthor(), request.isFromGuild() ? request.getMember() : null, request.getChannel(), action, ActionRequestType.MESSAGE_RECEIVED) )
             return;
 
         ActionResult result = action.call(request, ActionRequestType.MESSAGE_RECEIVED);
         result.log(action.name, request, request.getAuthor(), request.getChannel());
     }
 
-    private boolean tryAuthorize(GenericEvent request, User user, Member member, MessageChannelUnion channel, Action action) {
-        AuthorizationResult auth;
+    private boolean authorizeWithContext(GenericEvent request, User user, Member member, MessageChannelUnion channel, Action action, ActionRequestType requestType) {
+        //Context check
+        AuthorizationResult auth = action.authorizeContext(request, request.getJDA());
+
+        if (requestType == ActionRequestType.MESSAGE_RECEIVED && !Config.messageCommandsOn)
+            auth = auth.and(AuthorizationResult.DENY("Message commands off in configuration."));
+
+        if ( !auth.isAccept() ) {
+            LogContext.deny(
+                    action.name, request, user, channel, auth.details()
+            ).log();
+            return false;
+        }
+
+        //User check
+        auth = auth.and(authorizeUser(user));
         if ( member != null )
-            auth = authorizeMember(action, member, channel);
-        else auth = authorizeUser(user);
+            auth = auth.and(authorizeMember(action, member, channel));
 
-        auth.and(authorizeUser(request.getJDA().getSelfUser()));
+        //Maybe when there's an actual permission system
+//        auth = auth.and(authorizeUser(request.getJDA().getSelfUser()));
 
-        auth = auth.and(action.uniqueAuthorize(request, request.getJDA()));
+        auth = auth.and(action.authorizeUser(request, request.getJDA()));
+        auth = auth.and(action.authorizeUser(request, request.getJDA(), auth));
 
-        if ( !auth.success() ) {
+        if ( !auth.isAccept() ) {
             LogContext.deny(
                     action.name, request, user, channel, auth.details()
             ).log();
@@ -126,37 +140,25 @@ public class ActionHandler {
 
     private AuthorizationResult authorizeUser(User user) {
         if ( Config.ownerBypass && user.getId().equals(Config.ownerId) )
-            return ACCEPT();
+            return ADMIN_ACCEPT();
         if ( Config.administratorWhitelist.contains(user.getId()) )
-            return ACCEPT();
-        if ( !Config.messageCommandsOn ) {
-            if ( !user.getId().equals(Config.ownerId) ) return DENY("Message commands off.");
-        }
+            return ADMIN_ACCEPT();
 
-        if ( user.isBot() || user.isSystem() ) return DENY("User type not valid (bot or system)");
+        boolean isSelf = user.getId().equals(Config.selfId);
+        if ( !isSelf ) {
+            if ( user.isBot() || user.isSystem() )
+                return DENY("User type not valid (bot or system)");
+        }
 
         return ACCEPT();
     }
 
     private AuthorizationResult authorizeMember(Action action, Member member, MessageChannelUnion channel) {
-        if ( Config.ownerBypass && member.getId().equals(Config.ownerId) )
-            return ACCEPT();
-        if ( Config.administratorWhitelist.contains(member.getId()) )
-            return ACCEPT();
-        if ( !Config.messageCommandsOn ) {
-            if ( !member.getId().equals(Config.ownerId) ) return DENY("Message commands off.");
-        }
-
-        boolean isSelf = member.getId().equals(Config.selfId);
-        if ( !isSelf ) {
-            if ( member.getUser().isBot() || member.getUser().isSystem() )
-                return DENY("User type not valid (bot or system)");
-        }
-
         List<Permission> missingMemberPermissions = action.requiredUserPermissions.stream()
                 .filter(p -> !member.getPermissions(channel.asGuildMessageChannel()).contains(p))
                 .toList();
 
+        boolean isSelf = member.getId().equals(Config.selfId);
         if ( !missingMemberPermissions.isEmpty() )
             return DENY((isSelf ? "Self-member" : "Author") + " missing permissions: " + missingMemberPermissions);
 

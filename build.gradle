@@ -2,11 +2,10 @@ plugins {
     id 'java'
     id "application"
     id 'com.github.johnrengelman.shadow' version '7.0.0'
-//    id 'com.sedmelluq.jdaction' version '1.0.2'
 }
 
 group 'pl.cheily'
-version '1.0-SNAPSHOT'
+version '1.0.0'
 
 repositories {
     mavenCentral()
@@ -29,7 +28,16 @@ test {
     useJUnitPlatform()
 }
 
+
 shadowJar {
-    archiveName = 'HeartBlazer.jar'
+    mainClassName = 'pl.cheily.HeartBlazer'
     applicationName = 'HeartBlazer'
+}
+
+jar {
+    manifest {
+        attributes(
+            'Main-Class': 'pl.cheily.HeartBlazer'
+        )
+    }
 }

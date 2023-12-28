@@ -29,11 +29,6 @@ public class FirstEventListener extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(@NotNull MessageReceivedEvent event) {
-        if ( !Config.messageCommandsOn ) {
-            if ( !Config.ownerBypass )
-                return;
-        }
-
         String[] words = event.getMessage().getContentRaw().split(" ");
         if ( words.length == 0 ) return;
         String fWord = words[ 0 ];

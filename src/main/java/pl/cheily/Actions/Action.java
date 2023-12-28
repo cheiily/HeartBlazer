@@ -34,7 +34,14 @@ public abstract class Action {
         return requiredBotPermissions;
     }
 
-    public AuthorizationResult uniqueAuthorize(GenericEvent request, JDA jda) {
+    public AuthorizationResult authorizeContext(GenericEvent request, JDA jda) {
+        return AuthorizationResult.ACCEPT();
+    }
+    public AuthorizationResult authorizeUser(GenericEvent request, JDA jda) {
+        return AuthorizationResult.ACCEPT();
+    }
+    //temporary fix
+    public AuthorizationResult authorizeUser(GenericEvent request, JDA jda, AuthorizationResult currentAuthState) {
         return AuthorizationResult.ACCEPT();
     }
 
