@@ -12,13 +12,13 @@ import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import pl.cheily.Actions.ActionCommands.Sleep;
 import pl.cheily.Actions.ActionCommands.PinOrUnpin;
 import pl.cheily.Actions.ActionCommands.Ping;
+import pl.cheily.Actions.Authorization.AuthLevel;
+import pl.cheily.Actions.Authorization.AuthResult;
 import pl.cheily.Config;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import static pl.cheily.Actions.AuthorizationResult.*;
 
 public class ActionHandler {
     private final Set<Action> actions = new HashSet<>();
@@ -47,7 +47,7 @@ public class ActionHandler {
             return;
         }
 
-        ActionResult result = action.call(request, ActionRequestType.MESSAGE_CONTEXT_INTERACTION);
+        ActionResult result = action.invoke(request, ActionRequestType.MESSAGE_CONTEXT_INTERACTION);
         result.log(action.name, request, request.getUser(), request.getChannel());
         request.reply(result.description()).setEphemeral(true).queue(
                 interactionHook -> LogContext.minorSuccess(action.name, request, "Sent general handler reply.").log(),
@@ -67,7 +67,7 @@ public class ActionHandler {
         if ( !authorizeWithContext(request, request.getUser(), request.isFromGuild() ? request.getMember() : null, request.getChannel(), action, ActionRequestType.MESSAGE_EMOJI_REACTION) )
             return;
 
-        action.call(request, ActionRequestType.MESSAGE_EMOJI_REACTION)
+        action.invoke(request, ActionRequestType.MESSAGE_EMOJI_REACTION)
                 .log(action.name, request, request.getUser(), request.getChannel());
     }
 
@@ -83,7 +83,7 @@ public class ActionHandler {
         if ( !authorizeWithContext(request, request.getUser(), request.isFromGuild() ? request.getMember() : null, request.getChannel(), action, ActionRequestType.SLASH_COMMAND) )
             return;
 
-        ActionResult result = action.call(request, ActionRequestType.SLASH_COMMAND);
+        ActionResult result = action.invoke(request, ActionRequestType.SLASH_COMMAND);
         result.log(action.name, request, request.getUser(), request.getChannel());
     }
 
@@ -99,71 +99,104 @@ public class ActionHandler {
         if ( !authorizeWithContext(request, request.getAuthor(), request.isFromGuild() ? request.getMember() : null, request.getChannel(), action, ActionRequestType.MESSAGE_RECEIVED) )
             return;
 
-        ActionResult result = action.call(request, ActionRequestType.MESSAGE_RECEIVED);
+        ActionResult result = action.invoke(request, ActionRequestType.MESSAGE_RECEIVED);
         result.log(action.name, request, request.getAuthor(), request.getChannel());
     }
 
+    /**
+     * Verifies whether the user is allowed to request the specified action under the current context.
+     * The authorization steps are as follows:
+     * <ol>
+     *     <li>The AuthResult is initialized with the handler's own User/Member verification methods. {@link #authorizeUser}, {@link #authorizeMember}.
+     *     These methods provide a general check of whether the user is on the {@link Config#administratorWhitelist}, whether they
+     *     have the required discord permissions, and whether the self-user has those as well.</li>
+     *     <li>Then the action is asked to authorize the context of the request. This provides a mask the acquired level will be checked against.</li>
+     *     <li>The action is asked to authorize the user of the request under its own specific requirements.</li>
+     *     <li>The acquired AuthResult is then verified against the action's context mask and its required minimum level.
+     *     The result must be present in both of these masks or the request will be denied.</li>
+     * </ol>
+     * @param request
+     * @param user
+     * @param member
+     * @param channel
+     * @param action
+     * @param requestType
+     * @return
+     */
     private boolean authorizeWithContext(GenericEvent request, User user, Member member, MessageChannelUnion channel, Action action, ActionRequestType requestType) {
-        //Context check
-        AuthorizationResult auth = action.authorizeContext(request, request.getJDA());
-
-        if (requestType == ActionRequestType.MESSAGE_RECEIVED && !Config.messageCommandsOn)
-            auth = auth.and(AuthorizationResult.DENY("Message commands off in configuration."));
-
-        if ( !auth.isAccept() ) {
-            LogContext.deny(
-                    action.name, request, user, channel, auth.details()
-            ).log();
-            return false;
-        }
-
-        //User check
-        auth = auth.and(authorizeUser(user));
+        AuthResult result = new AuthResult();
+        authorizeUser(user, result);
         if ( member != null )
-            auth = auth.and(authorizeMember(action, member, channel));
+            authorizeMember(action, member, channel, result);
 
-        //Maybe when there's an actual permission system
-//        auth = auth.and(authorizeUser(request.getJDA().getSelfUser()));
+        if (requestType == ActionRequestType.MESSAGE_RECEIVED && !Config.messageCommandsOn) {
+            result.fail(AuthLevel.ADMINISTRATOR.below(), "Message commands off in configuration.");
+        }
 
-        auth = auth.and(action.authorizeUser(request, request.getJDA()));
-        auth = auth.and(action.authorizeUser(request, request.getJDA(), auth));
+        AuthResult contextMask = action.authorizeContext(request, requestType);
 
-        if ( !auth.isAccept() ) {
+        action.authorizeUser(request, requestType, result);
+
+        if ( !contextMask.evaluate(result.getAuthLevel()) ) {
             LogContext.deny(
-                    action.name, request, user, channel, auth.details()
+                    action.name, request, user, channel,
+                    "Request not meeting context requirements for this user. Allowed: " + contextMask.getAuthLevel().containedLevels()
+                    + ". Acquired: " + result.getAuthLevel().containedLevels() + ". Details in warn log."
+            ).log();
+            LogContext.minorFailure(
+                    action.name, request, result.debugString(), null
             ).log();
             return false;
         }
+        if ( !result.evaluate(action.requiredAuthLevel) ) {
+            LogContext.deny(
+                    action.name, request, user, channel,
+                    "User not meeting minimum required permission level for this action. Required: " + action.requiredAuthLevel.containedLevels()
+                    + ". Contained: " + result.getAuthLevel().containedLevels() + ". Details in warn log."
+            ).log();
+            LogContext.minorFailure(
+                    action.name, request, result.debugString(), null
+            ).log();
+            return false;
+        }
+
+        LogContext.minorSuccess(
+                action.name, request,
+                " Action authorized. Allowed " + contextMask.getAuthLevel().containedLevels()
+                + ". Required: " + action.requiredAuthLevel.containedLevels()
+                + ". Acquired: " + result.debugString()
+        ).log();
         return true;
+
     }
 
 
-    private AuthorizationResult authorizeUser(User user) {
+    private void authorizeUser(User user, AuthResult currentAuthState) {
         if ( Config.ownerBypass && user.getId().equals(Config.ownerId) )
-            return ADMIN_ACCEPT();
+            currentAuthState.pass(AuthLevel.OWNER, "Requester is bot-owner.");
         if ( Config.administratorWhitelist.contains(user.getId()) )
-            return ADMIN_ACCEPT();
+            currentAuthState.pass(AuthLevel.ADMINISTRATOR, "Requester is white-listed administrator.");
 
         boolean isSelf = user.getId().equals(Config.selfId);
         if ( !isSelf ) {
             if ( user.isBot() || user.isSystem() )
-                return DENY("User type not valid (bot or system)");
+                currentAuthState.fail(AuthLevel.ALL, "Requester is bot or system.");
         }
-
-        return ACCEPT();
     }
 
-    private AuthorizationResult authorizeMember(Action action, Member member, MessageChannelUnion channel) {
+    private void authorizeMember(Action action, Member member, MessageChannelUnion channel, AuthResult currentAuthState) {
         List<Permission> missingMemberPermissions = action.requiredUserPermissions.stream()
                 .filter(p -> !member.getPermissions(channel.asGuildMessageChannel()).contains(p))
                 .toList();
 
         boolean isSelf = member.getId().equals(Config.selfId);
-        if ( !missingMemberPermissions.isEmpty() )
-            return DENY((isSelf ? "Self-member" : "Author") + " missing permissions: " + missingMemberPermissions);
 
-
-        return ACCEPT();
+        if ( !missingMemberPermissions.isEmpty() ) {
+            if (isSelf)
+                currentAuthState.fail(AuthLevel.ALL, "Self user is missing permissions: " + missingMemberPermissions);
+            else
+                currentAuthState.fail(AuthLevel.USER, "Requester is missing permissions: " + missingMemberPermissions);
+        }
     }
 
     //selfuser guild presence

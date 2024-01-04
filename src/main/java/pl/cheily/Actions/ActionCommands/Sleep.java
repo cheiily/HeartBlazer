@@ -4,6 +4,8 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import pl.cheily.Actions.*;
+import pl.cheily.Actions.Authorization.AuthLevel;
+import pl.cheily.Actions.Authorization.AuthResult;
 import pl.cheily.Config;
 
 import java.util.Set;
@@ -12,6 +14,7 @@ public class Sleep extends Action {
     private Sleep() {
         name = "sleep";
         acceptedRequestTypes = Set.of(ActionRequestType.MESSAGE_RECEIVED);
+        requiredAuthLevel = AuthLevel.OWNER;
     }
 
     private static Sleep _instance;
@@ -22,15 +25,7 @@ public class Sleep extends Action {
     }
 
     @Override
-    public AuthorizationResult authorizeUser(GenericEvent request, JDA jda) {
-        if (!((MessageReceivedEvent) request).getAuthor().getId().equals(Config.ownerId))
-            return AuthorizationResult.DENY("Author must be bot owner.");
-
-        return AuthorizationResult.ACCEPT();
-    }
-
-    @Override
-    public ActionResult call(GenericEvent request, ActionRequestType requestType) {
+    public ActionResult invoke(GenericEvent request, ActionRequestType requestType) {
         ((MessageReceivedEvent) request).getMessage().reply("Commencing shutdown.").queue(
                 message -> LogContext.minorSuccess(name, request, "Sent standard reply.").log(),
                 throwable -> LogContext.minorFailure(name, request, "Couldn't send standard reply.", throwable).log()

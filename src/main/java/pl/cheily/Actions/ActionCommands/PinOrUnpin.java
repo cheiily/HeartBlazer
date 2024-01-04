@@ -11,13 +11,13 @@ import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import pl.cheily.Actions.*;
+import pl.cheily.Actions.Authorization.AuthLevel;
+import pl.cheily.Actions.Authorization.AuthResult;
 
 import java.util.Set;
 
 import static pl.cheily.Actions.ActionRequestType.MESSAGE_CONTEXT_INTERACTION;
 import static pl.cheily.Actions.ActionRequestType.MESSAGE_EMOJI_REACTION;
-import static pl.cheily.Actions.AuthorizationResult.ACCEPT;
-import static pl.cheily.Actions.AuthorizationResult.DENY;
 
 public class PinOrUnpin extends Action {
     private PinOrUnpin() {
@@ -29,6 +29,7 @@ public class PinOrUnpin extends Action {
         );
 
         listenedEmoji = Set.of(pushpin);
+        requiredAuthLevel = AuthLevel.USER;
     }
 
     private static PinOrUnpin _instance;
@@ -45,44 +46,67 @@ public class PinOrUnpin extends Action {
     private static final Emoji exclamation_mark = Emoji.fromUnicode("❗");
 
     @Override
-    public AuthorizationResult authorizeContext(GenericEvent request, JDA jda) {
-        if ( request instanceof MessageReactionAddEvent cRequest ) {
-            if ( !cRequest.getChannelType().equals(ChannelType.GUILD_PRIVATE_THREAD)
-                    && !cRequest.getChannelType().equals(ChannelType.GUILD_PUBLIC_THREAD)
-            ) {
-                return DENY("Incorrect channel type - not a thread.");
+    public AuthResult authorizeContext(GenericEvent request, ActionRequestType requestType) {
+        AuthResult contextMask = new AuthResult();
+        contextMask.pass(AuthLevel.ALL, "Initialization.");
+
+        switch (requestType) {
+            case MESSAGE_EMOJI_REACTION: {
+                MessageReactionAddEvent cRequest = (MessageReactionAddEvent) request;
+                if (!cRequest.getChannelType().equals(ChannelType.GUILD_PRIVATE_THREAD)
+                        && !cRequest.getChannelType().equals(ChannelType.GUILD_PUBLIC_THREAD)
+                ) {
+                    contextMask.fail(AuthLevel.ALL, "Incorrect channel type - not a thread.");
+                }
+                break;
             }
-        } else if ( request instanceof MessageContextInteractionEvent cRequest ) {
-            if ( !cRequest.getChannelType().equals(ChannelType.GUILD_PRIVATE_THREAD)
-                    && !cRequest.getChannelType().equals(ChannelType.GUILD_PUBLIC_THREAD)
-            ) return DENY("Incorrect channel type - not a thread.");
+            case MESSAGE_CONTEXT_INTERACTION: {
+                MessageContextInteractionEvent cRequest = (MessageContextInteractionEvent) request;
+                if (!cRequest.getChannelType().equals(ChannelType.GUILD_PRIVATE_THREAD)
+                        && !cRequest.getChannelType().equals(ChannelType.GUILD_PUBLIC_THREAD)
+                ) {
+                    contextMask.fail(AuthLevel.ALL, "Incorrect channel type - not a thread.");
+                }
+                break;
+            }
+            default:
+                contextMask.fail(AuthLevel.ALL, "Incorrect request type. THIS CODE SHOULD NEVER BE REACHED and acts as a safeguard.");
+                break;
         }
 
-        return ACCEPT();
+        return contextMask;
     }
 
     @Override
-    public AuthorizationResult authorizeUser(GenericEvent request, JDA jda, AuthorizationResult currentAuthState) {
-        if ( request instanceof MessageReactionAddEvent cRequest ) {
-            String authorId = cRequest.getUserId();
+    public void authorizeUser(GenericEvent request, ActionRequestType requestType, AuthResult currentAuthState) {
+        switch (requestType) {
+            case MESSAGE_EMOJI_REACTION -> {
+                MessageReactionAddEvent cRequest = (MessageReactionAddEvent) request;
+                String authorId = cRequest.getUserId();
 
-            if ( !authorId.equals(cRequest.getChannel().asThreadChannel().getOwnerId()) ) {
-                if ( !currentAuthState.and(DENY("")).isAccept() )
-                    respond(cRequest.retrieveMessage().complete(), cross, request, cRequest.getReaction(), cRequest.getUser());
+                if ( !authorId.equals(cRequest.getChannel().asThreadChannel().getOwnerId()) ) {
+                    currentAuthState.fail(AuthLevel.ADMINISTRATOR.below(), "Requester is not thread owner.");
 
-                return DENY("Author is not the thread owner.");
+                    AuthLevel pass = AuthLevel.MODERATOR.above();
+                    if ( !currentAuthState.evaluate(pass) )
+                        respond(cRequest.retrieveMessage().complete(), cross, request, cRequest.getReaction(), cRequest.getUser());
+                }
             }
-        } else if ( request instanceof MessageContextInteractionEvent cRequest ) {
-            String authorId = cRequest.getUser().getId();
+            case MESSAGE_CONTEXT_INTERACTION -> {
+                MessageContextInteractionEvent cRequest = (MessageContextInteractionEvent) request;
+                String authorId = cRequest.getUser().getId();
 
-            if ( !authorId.equals(cRequest.getChannel().asThreadChannel().getOwnerId()) )
-                return DENY("Author is not the thread owner.");
+                if ( !authorId.equals(cRequest.getChannel().asThreadChannel().getOwnerId()) ) {
+                    currentAuthState.fail(AuthLevel.ADMINISTRATOR.below(), "Requester is not thread owner.");
+                }
+
+            }
+            default -> currentAuthState.fail(AuthLevel.ALL, "Incorrect request type. THIS CODE SHOULD NEVER BE REACHED and acts as a safeguard.");
         }
-        return ACCEPT();
     }
 
     @Override
-    public ActionResult call(GenericEvent request, ActionRequestType requestType) {
+    public ActionResult invoke(GenericEvent request, ActionRequestType requestType) {
         Message message = null;
         User triggerUser = null;
         MessageReaction triggerReaction = null;

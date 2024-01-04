@@ -33,7 +33,7 @@ public class Ping extends Action {
     }
 
     @Override
-    public ActionResult call(GenericEvent request, ActionRequestType requestType) {
+    public ActionResult invoke(GenericEvent request, ActionRequestType requestType) {
         if ( requestType == SLASH_COMMAND ) {
             SlashCommandInteractionEvent cRequest = (SlashCommandInteractionEvent) request;
 
