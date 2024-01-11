@@ -22,6 +22,8 @@ public class Config {
 
     public static List<String> administratorWhitelist = List.of();
 
+    public static List<String> moderatorWhitelist = List.of();
+
 
     public static void load() {
         Toml toml = new Toml().read(new File("config.toml"));
@@ -31,6 +33,7 @@ public class Config {
         ownerId = toml.getString("owner");
         ownerBypass = toml.getBoolean("owner_bypass");
         administratorWhitelist = toml.getList("administrators");
+        moderatorWhitelist = toml.getList("moderators");
         version = toml.getString("version");
     }
 }

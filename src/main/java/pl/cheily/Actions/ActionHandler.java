@@ -176,6 +176,8 @@ public class ActionHandler {
             currentAuthState.pass(AuthLevel.OWNER, "Requester is bot-owner.");
         if ( Config.administratorWhitelist.contains(user.getId()) )
             currentAuthState.pass(AuthLevel.ADMINISTRATOR, "Requester is white-listed administrator.");
+        if ( Config.moderatorWhitelist.contains(user.getId()) )
+            currentAuthState.pass(AuthLevel.MODERATOR, "Requester is white-listed moderator.");
 
         boolean isSelf = user.getId().equals(Config.selfId);
         if ( !isSelf ) {
