@@ -1,12 +1,9 @@
 package pl.cheily.Actions.ActionCommands;
 
-import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import pl.cheily.Actions.*;
 import pl.cheily.Actions.Authorization.AuthLevel;
-import pl.cheily.Actions.Authorization.AuthResult;
-import pl.cheily.Config;
 
 import java.util.Set;
 
@@ -14,7 +11,7 @@ public class Sleep extends Action {
     private Sleep() {
         name = "sleep";
         acceptedRequestTypes = Set.of(ActionRequestType.MESSAGE_RECEIVED);
-        requiredAuthLevel = AuthLevel.OWNER;
+        minimumRequiredAuthLevel = AuthLevel.OWNER;
     }
 
     private static Sleep _instance;

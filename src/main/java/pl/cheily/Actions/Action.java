@@ -1,6 +1,5 @@
 package pl.cheily.Actions;
 
-import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.GenericEvent;
@@ -13,7 +12,7 @@ public abstract class Action {
 
     protected String name = "No name provided";
     protected Set<String> helpNames = Set.of();
-    protected AuthLevel requiredAuthLevel = AuthLevel.NONE;
+    protected AuthLevel minimumRequiredAuthLevel = AuthLevel.NONE;
 
     protected Set<ActionRequestType> acceptedRequestTypes = Set.of();
     protected Set<Permission> requiredUserPermissions = Set.of();
@@ -45,6 +44,8 @@ public abstract class Action {
      * without some sort of local, pre-saved whitelist. If a command requires user validation
      * to access it, it may allow {@code AuthLevel.USER} in a guild, but not in a DM.
      * </p>
+     * If {@link #minimumRequiredAuthLevel} is the "required by default" level, then this method will adjust that default requirement to the specified conditions.
+     *
      * @implSpec The denied levels should be <b>failed</b> with a valid reason string, rather than not passed. Checking may start by passing {@link AuthLevel#ALL}.
      *
      * @param request - the command should parse the context according to its own requirements.
@@ -63,7 +64,7 @@ public abstract class Action {
      *     With an example of {@link pl.cheily.Actions.ActionCommands.PinOrUnpin}:
      *     The command's authorization depends on thread-ownership.
      *     If the user is a thread owner, the command will pass the {@code AuthLevel.USER}, otherwise it will fail it.
-     *     This function should be specifically concerned with its minimum, {@link Action#requiredAuthLevel}.
+     *     This function should be specifically concerned with its minimum, {@link Action#minimumRequiredAuthLevel}.
      *     The action may fail levels previously passed or pass levels previously failed, depending on its requirements.
      * </p>
      * @param request containing user or member to verify.

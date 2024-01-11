@@ -148,10 +148,10 @@ public class ActionHandler {
             ).log();
             return false;
         }
-        if ( !result.evaluate(action.requiredAuthLevel) ) {
+        if ( !result.evaluate(action.minimumRequiredAuthLevel.andAbove()) ) {
             LogContext.deny(
                     action.name, request, user, channel,
-                    "User not meeting minimum required permission level for this action. Required: " + action.requiredAuthLevel.containedLevels()
+                    "User not meeting minimum required permission level for this action. Required: " + action.minimumRequiredAuthLevel.containedLevels()
                     + ". Contained: " + result.getAuthLevel().containedLevels() + ". Details in warn log."
             ).log();
             LogContext.minorFailure(
@@ -163,7 +163,7 @@ public class ActionHandler {
         LogContext.minorSuccess(
                 action.name, request,
                 " Action authorized. Allowed " + contextMask.getAuthLevel().containedLevels()
-                + ". Required: " + action.requiredAuthLevel.containedLevels()
+                + ". Required: " + action.minimumRequiredAuthLevel.containedLevels()
                 + ". Acquired: " + result.debugString()
         ).log();
         return true;

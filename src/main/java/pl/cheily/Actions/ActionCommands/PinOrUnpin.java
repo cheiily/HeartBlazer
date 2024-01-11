@@ -1,6 +1,5 @@
 package pl.cheily.Actions.ActionCommands;
 
-import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.User;
@@ -29,7 +28,7 @@ public class PinOrUnpin extends Action {
         );
 
         listenedEmoji = Set.of(pushpin);
-        requiredAuthLevel = AuthLevel.USER;
+        minimumRequiredAuthLevel = AuthLevel.USER;
     }
 
     private static PinOrUnpin _instance;
@@ -84,7 +83,9 @@ public class PinOrUnpin extends Action {
                 MessageReactionAddEvent cRequest = (MessageReactionAddEvent) request;
                 String authorId = cRequest.getUserId();
 
-                if ( !authorId.equals(cRequest.getChannel().asThreadChannel().getOwnerId()) ) {
+                if ( authorId.equals(cRequest.getChannel().asThreadChannel().getOwnerId()) ) {
+                    currentAuthState.pass(AuthLevel.NONE.above(), "Requester is thread owner");
+                } else {
                     currentAuthState.fail(AuthLevel.ADMINISTRATOR.below(), "Requester is not thread owner.");
 
                     AuthLevel pass = AuthLevel.MODERATOR.above();
@@ -96,7 +97,9 @@ public class PinOrUnpin extends Action {
                 MessageContextInteractionEvent cRequest = (MessageContextInteractionEvent) request;
                 String authorId = cRequest.getUser().getId();
 
-                if ( !authorId.equals(cRequest.getChannel().asThreadChannel().getOwnerId()) ) {
+                if ( authorId.equals(cRequest.getChannel().asThreadChannel().getOwnerId()) ) {
+                    currentAuthState.pass(AuthLevel.NONE.above(), "Requester is thread owner");
+                } else {
                     currentAuthState.fail(AuthLevel.ADMINISTRATOR.below(), "Requester is not thread owner.");
                 }
 
