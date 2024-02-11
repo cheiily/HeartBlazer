@@ -12,6 +12,7 @@ import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import pl.cheily.Actions.*;
 import pl.cheily.Actions.Authorization.AuthLevel;
 import pl.cheily.Actions.Authorization.AuthResult;
+import pl.cheily.Config;
 
 import java.util.Set;
 
@@ -88,6 +89,9 @@ public class PinOrUnpin extends Action {
                 } else {
                     currentAuthState.fail(AuthLevel.ADMINISTRATOR.below(), "Requester is not thread owner.");
 
+                    if ( currentAuthState.evaluate(AuthLevel.OWNER) && !Config.ownerBypass )
+                        currentAuthState.fail(AuthLevel.ALL, "Owner bypass off.");
+
                     AuthLevel pass = AuthLevel.MODERATOR.above();
                     if ( !currentAuthState.evaluate(pass) )
                         respond(cRequest.retrieveMessage().complete(), cross, request, cRequest.getReaction(), cRequest.getUser());
@@ -101,11 +105,16 @@ public class PinOrUnpin extends Action {
                     currentAuthState.pass(AuthLevel.NONE.above(), "Requester is thread owner");
                 } else {
                     currentAuthState.fail(AuthLevel.ADMINISTRATOR.below(), "Requester is not thread owner.");
+
+                    if ( currentAuthState.evaluate(AuthLevel.OWNER) && !Config.ownerBypass )
+                        currentAuthState.fail(AuthLevel.ALL, "Owner bypass off.");
                 }
 
             }
             default -> currentAuthState.fail(AuthLevel.ALL, "Incorrect request type. THIS CODE SHOULD NEVER BE REACHED and acts as a safeguard.");
         }
+
+
     }
 
     @Override

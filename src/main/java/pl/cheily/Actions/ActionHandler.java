@@ -9,6 +9,7 @@ import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionE
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
+import pl.cheily.Actions.ActionCommands.Reload;
 import pl.cheily.Actions.ActionCommands.Sleep;
 import pl.cheily.Actions.ActionCommands.PinOrUnpin;
 import pl.cheily.Actions.ActionCommands.Ping;
@@ -27,6 +28,7 @@ public class ActionHandler {
         actions.add(Ping.instance());
         actions.add(PinOrUnpin.instance());
         actions.add(Sleep.instance());
+        actions.add(Reload.instance());
     }
 
     public void accept(MessageContextInteractionEvent request) {
@@ -172,7 +174,7 @@ public class ActionHandler {
 
 
     private void authorizeUser(User user, AuthResult currentAuthState) {
-        if ( Config.ownerBypass && user.getId().equals(Config.ownerId) )
+        if ( user.getId().equals(Config.ownerId) )
             currentAuthState.pass(AuthLevel.OWNER, "Requester is bot-owner.");
         if ( Config.administratorWhitelist.contains(user.getId()) )
             currentAuthState.pass(AuthLevel.ADMINISTRATOR, "Requester is white-listed administrator.");

@@ -11,7 +11,7 @@ public class Sleep extends Action {
     private Sleep() {
         name = "sleep";
         acceptedRequestTypes = Set.of(ActionRequestType.MESSAGE_RECEIVED);
-        minimumRequiredAuthLevel = AuthLevel.OWNER;
+        minimumRequiredAuthLevel = AuthLevel.ADMINISTRATOR;
     }
 
     private static Sleep _instance;

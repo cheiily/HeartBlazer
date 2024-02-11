@@ -13,7 +13,8 @@ public class Reload extends Action {
     private Reload() {
         name = "reload";
         helpNames = Set.of("Reload");
-        minimumRequiredAuthLevel = AuthLevel.OWNER;
+        acceptedRequestTypes = Set.of(ActionRequestType.MESSAGE_RECEIVED);
+        minimumRequiredAuthLevel = AuthLevel.ADMINISTRATOR;
     }
 
     private static Reload _instance;
@@ -26,6 +27,6 @@ public class Reload extends Action {
     @Override
     public ActionResult invoke(GenericEvent request, ActionRequestType requestType) {
         Config.load();
-        return null;
+        return ActionResult.SUCCESS_ACCEPT;
     }
 }
