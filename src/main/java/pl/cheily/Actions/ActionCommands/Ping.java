@@ -18,12 +18,14 @@ import static pl.cheily.Actions.ActionResult.SUCCESS_ACCEPT;
 
 public class Ping extends Action {
     private Ping() {
-        this.name = "ping";
+        this.name = PROP_NAME;
         this.acceptedRequestTypes = Set.of(
                 MESSAGE_RECEIVED,
                 SLASH_COMMAND
         );
     }
+
+    public static final String PROP_NAME = "ping";
 
     private static Ping _instance;
 

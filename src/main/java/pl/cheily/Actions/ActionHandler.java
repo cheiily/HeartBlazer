@@ -9,10 +9,7 @@ import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionE
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
-import pl.cheily.Actions.ActionCommands.Reload;
-import pl.cheily.Actions.ActionCommands.Sleep;
-import pl.cheily.Actions.ActionCommands.PinOrUnpin;
-import pl.cheily.Actions.ActionCommands.Ping;
+import pl.cheily.Actions.ActionCommands.*;
 import pl.cheily.Actions.Authorization.AuthLevel;
 import pl.cheily.Actions.Authorization.AuthResult;
 import pl.cheily.Config;
@@ -29,6 +26,7 @@ public class ActionHandler {
         actions.add(PinOrUnpin.instance());
         actions.add(Sleep.instance());
         actions.add(Reload.instance());
+        actions.add(DustLoop.instance());
     }
 
     public void accept(MessageContextInteractionEvent request) {

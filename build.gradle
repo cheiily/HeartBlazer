@@ -19,6 +19,7 @@ dependencies {
     }
     implementation 'ch.qos.logback:logback-classic:1.3.5'
     implementation 'com.moandjiezana.toml:toml4j:0.7.2'
+    implementation fileTree(dir: 'libs', includes: ['*.jar'])
 }
 
 compileJava.options.encoding = 'UTF-8'
