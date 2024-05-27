@@ -41,7 +41,11 @@ public class HeartBlazer {
                                 new SubcommandData(DustLoop.PROP_CMD_DATA, "Returns a move's detailed data.")
                                         .addOption(OptionType.STRING, DustLoop.PROP_ARG_CHAR, "Character to poll", true)
                                         .addOption(OptionType.STRING, DustLoop.PROP_ARG_MOVE, "Move by input (strictly the same as on wiki)", true)
-                                        .addOption(OptionType.STRING, DustLoop.PROP_ARG_WIKI, "Wiki to poll if not GBVSR by default", false)
+                                        .addOption(OptionType.STRING, DustLoop.PROP_ARG_WIKI, "Wiki to poll if not GBVSR by default", false)//,
+//                                new SubcommandData(DustLoop.PROP_CMD_EXTRA, "Input a full command on your own.")
+//                                        .addOption(OptionType.STRING, DustLoop.PROP_ARG_INPUT, "Your input. Same as CLI, barring the filename.", true),
+//                                new SubcommandData(DustLoop.PROP_CMD_HELP, "Search help for your input.")
+//                                        .addOption(OptionType.STRING, DustLoop.PROP_ARG_INPUT, "Your input. Same as CLI, barring the filename.", true)
                         )
         ).queue(
                 cmds -> logger.debug(mBotFeedback, "Loaded interactions: " + cmds.toString())
