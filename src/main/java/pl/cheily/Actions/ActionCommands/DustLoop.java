@@ -115,7 +115,9 @@ public class DustLoop extends Action {
                 }
 
                 EmbedBuilder eb = new EmbedBuilder();
-                eb.setTitle(character + ' ' + data.get("input") + " (" + wiki + ')');
+                var data_input = data.get("input");
+                if (data_input == null) data_input = data.get("Input");
+                eb.setTitle(character + ' ' + data_input + " (" + wiki + ')');
                 data.forEach((key, val) -> {
                     if (!key.equals("input"))
                         eb.addField(key, val, true);
