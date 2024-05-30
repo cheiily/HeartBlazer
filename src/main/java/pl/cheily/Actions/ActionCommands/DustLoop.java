@@ -72,6 +72,8 @@ public class DustLoop extends Action {
                     hook.editOriginal("Parsing failure - no character. Try verifying your inputs.").queue();
                     return ActionResult.FAILURE("Parsing failure - no character.", null);
                 }
+                if ( !Character.isUpperCase(character.charAt(0)) )
+                    character = character.substring(0, 1).toUpperCase() + character.substring(1);
                 Map<String, List<String>> moves;
 
                 try {
@@ -101,6 +103,8 @@ public class DustLoop extends Action {
                     hook.editOriginal("Parsing failure - no move. Try verifying your inputs.").queue();
                     return ActionResult.FAILURE("Parsing failure - no move.", null);
                 }
+                if ( !Character.isUpperCase(character.charAt(0)) )
+                    character = character.substring(0, 1).toUpperCase() + character.substring(1);
                 Map<String, String> data;
 
                 try {
