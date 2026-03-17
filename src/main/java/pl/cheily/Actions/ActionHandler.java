@@ -17,20 +17,33 @@ import pl.cheily.Config;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import static pl.cheily.HeartBlazer.logger;
 
 public class ActionHandler {
-    private final Set<Action> actions = new HashSet<>();
+    private final Set<Action> allActions = new HashSet<>();
+    public final Set<Action> loadedActions = new HashSet<>();
 
-    {
-        actions.add(Ping.instance());
-        actions.add(PinOrUnpin.instance());
-        actions.add(Sleep.instance());
-        actions.add(Reload.instance());
-        actions.add(DustLoop.instance());
+    public void initialize() {
+        allActions.clear();
+        loadedActions.clear();
+
+        allActions.add(Ping.instance());
+        allActions.add(PinOrUnpin.instance());
+        allActions.add(Sleep.instance());
+        allActions.add(Reload.instance());
+        allActions.add(DustLoop.instance());
+
+        var filtered = allActions.stream()
+                .filter(action -> Config.enabledActions.contains(action.name))
+                .toList();
+        loadedActions.addAll(filtered);
+        logger.info("Loaded actions: {}", loadedActions.stream().map(Action::getName).collect(Collectors.joining(", ")));
     }
 
     public void accept(MessageContextInteractionEvent request) {
-        List<Action> found = actions.stream()
+        List<Action> found = loadedActions.stream()
                 .filter(action -> action.acceptedRequestTypes.contains(ActionRequestType.MESSAGE_CONTEXT_INTERACTION))
                 .filter(action -> action.name.equals(request.getName()) || action.helpNames.contains(request.getName()))
                 .toList();
@@ -56,7 +69,7 @@ public class ActionHandler {
     }
 
     public void accept(MessageReactionAddEvent request) {
-        List<Action> found = actions.stream()
+        List<Action> found = loadedActions.stream()
                 .filter(action -> action.acceptedRequestTypes.contains(ActionRequestType.MESSAGE_EMOJI_REACTION))
                 .filter(action -> action.listenedEmoji.contains(request.getEmoji()))
                 .toList();
@@ -72,7 +85,7 @@ public class ActionHandler {
     }
 
     public void accept(SlashCommandInteractionEvent request) {
-        List<Action> found = actions.stream()
+        List<Action> found = loadedActions.stream()
                 .filter(action -> action.acceptedRequestTypes.contains(ActionRequestType.SLASH_COMMAND))
                 .filter(action -> action.name.equals(request.getName()) || action.helpNames.contains(request.getName()))
                 .toList();
@@ -88,7 +101,7 @@ public class ActionHandler {
     }
 
     public void accept(MessageReceivedEvent request, String actionName) {
-        List<Action> found = actions.stream()
+        List<Action> found = loadedActions.stream()
                 .filter(action -> action.acceptedRequestTypes.contains(ActionRequestType.MESSAGE_RECEIVED))
                 .filter(action -> action.name.equals(actionName) || action.helpNames.contains(actionName))
                 .toList();

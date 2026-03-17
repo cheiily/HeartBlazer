@@ -4,6 +4,8 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import pl.cheily.Actions.Action;
 import pl.cheily.Actions.ActionRequestType;
 import pl.cheily.Actions.ActionResult;
@@ -32,6 +34,11 @@ public class Ping extends Action {
     public static Ping instance() {
         if ( _instance == null ) _instance = new Ping();
         return _instance;
+    }
+
+    @Override
+    public CommandData getContextCommandLoadConfiguration() {
+        return Commands.slash(Ping.PROP_NAME, "Returns the current gateway ping as well as real response delay.");
     }
 
     @Override

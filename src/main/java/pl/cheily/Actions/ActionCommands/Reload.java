@@ -6,6 +6,7 @@ import pl.cheily.Actions.ActionRequestType;
 import pl.cheily.Actions.ActionResult;
 import pl.cheily.Actions.Authorization.AuthLevel;
 import pl.cheily.Config;
+import pl.cheily.HeartBlazer;
 
 import java.util.Set;
 
@@ -27,6 +28,7 @@ public class Reload extends Action {
     @Override
     public ActionResult invoke(GenericEvent request, ActionRequestType requestType) {
         Config.load();
+        HeartBlazer.actionHandler.initialize();
         return ActionResult.SUCCESS_ACCEPT;
     }
 }

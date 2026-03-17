@@ -3,6 +3,7 @@ package pl.cheily.Actions;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.GenericEvent;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import pl.cheily.Actions.Authorization.AuthLevel;
 import pl.cheily.Actions.Authorization.AuthResult;
 
@@ -34,6 +35,10 @@ public abstract class Action {
 
     public Set<Permission> getRequiredBotPermissions() {
         return requiredBotPermissions;
+    }
+
+    public CommandData getContextCommandLoadConfiguration() {
+        return null;
     }
 
     /**

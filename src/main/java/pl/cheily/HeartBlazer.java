@@ -2,17 +2,14 @@ package pl.cheily;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
-import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.dv8tion.jda.api.interactions.commands.build.Commands;
-import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
-import pl.cheily.Actions.ActionCommands.DustLoop;
-import pl.cheily.Actions.ActionCommands.Ping;
+import pl.cheily.Actions.Action;
 import pl.cheily.Actions.ActionHandler;
 
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class HeartBlazer {
@@ -23,6 +20,7 @@ public class HeartBlazer {
 
     public static void main(String[] args) {
         Config.load();
+        actionHandler.initialize();
         startup();
     }
 
@@ -32,25 +30,13 @@ public class HeartBlazer {
                 .addEventListeners(client)
                 .build();
 
-        jda.updateCommands().addCommands(
-                Commands.message("Pin | Unpin (thread-only)"),
-                Commands.slash(Ping.PROP_NAME, "Returns the current gateway ping as well as real response delay."),
-                Commands.slash(DustLoop.PROP_NAME, "Polls data from dustloop.")
-                        .addSubcommands(
-                                new SubcommandData(DustLoop.PROP_CMD_LIST, "Lists a character's moves by expected input.")
-                                        .addOption(OptionType.STRING, DustLoop.PROP_ARG_CHAR, "Character to poll", true)
-                                        .addOption(OptionType.STRING, DustLoop.PROP_ARG_WIKI, "Wiki to poll if not GBVSR by default", false),
-                                new SubcommandData(DustLoop.PROP_CMD_DATA, "Returns a move's detailed data.")
-                                        .addOption(OptionType.STRING, DustLoop.PROP_ARG_CHAR, "Character to poll", true)
-                                        .addOption(OptionType.STRING, DustLoop.PROP_ARG_MOVE, "Move by input (strictly the same as on wiki)", true)
-                                        .addOption(OptionType.STRING, DustLoop.PROP_ARG_WIKI, "Wiki to poll if not GBVSR by default", false)//,
-//                                new SubcommandData(DustLoop.PROP_CMD_EXTRA, "Input a full command on your own.")
-//                                        .addOption(OptionType.STRING, DustLoop.PROP_ARG_INPUT, "Your input. Same as CLI, barring the filename.", true),
-//                                new SubcommandData(DustLoop.PROP_CMD_HELP, "Search help for your input.")
-//                                        .addOption(OptionType.STRING, DustLoop.PROP_ARG_INPUT, "Your input. Same as CLI, barring the filename.", true)
-                        )
-        ).queue(
-                cmds -> logger.debug(mBotFeedback, "Loaded interactions: " + cmds.toString())
+        var actionConfigs = actionHandler.loadedActions.stream()
+                .map(Action::getContextCommandLoadConfiguration)
+                .filter(Objects::nonNull)
+                .toList();
+
+        jda.updateCommands().addCommands(actionConfigs).queue(
+                cmds -> logger.debug(mBotFeedback, "Configured context commands for: " + cmds.toString())
         );
 
         try {
@@ -66,6 +52,7 @@ public class HeartBlazer {
         logger.info(mBotFeedback, "----- NEW SESSION -----");
         logger.debug(mBotFeedback, "Gateway ping: " + jda.getGatewayPing() + "ms.");
         Config.selfId = jda.getSelfUser().getId();
+        logger.info(mBotFeedback, "Connected to guilds: " + jda.getGuilds().stream().map(g -> g.getName() + " (" + g.getId() + ")").collect(Collectors.joining(", ")));
     }
 
     public static void onStartupFailure(Exception ex) {

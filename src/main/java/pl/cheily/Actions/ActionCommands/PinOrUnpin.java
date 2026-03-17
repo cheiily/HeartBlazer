@@ -9,6 +9,8 @@ import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import pl.cheily.Actions.*;
 import pl.cheily.Actions.Authorization.AuthLevel;
 import pl.cheily.Actions.Authorization.AuthResult;
@@ -22,7 +24,7 @@ import static pl.cheily.Actions.ActionRequestType.MESSAGE_EMOJI_REACTION;
 public class PinOrUnpin extends Action {
     private PinOrUnpin() {
         name = "pin | unpin";
-        helpNames = Set.of("Pin | Unpin (thread-only)");
+        helpNames = Set.of(PROP_DISPLAY_NAME);
         acceptedRequestTypes = Set.of(
                 MESSAGE_EMOJI_REACTION,
                 MESSAGE_CONTEXT_INTERACTION
@@ -31,6 +33,8 @@ public class PinOrUnpin extends Action {
         listenedEmoji = Set.of(pushpin);
         minimumRequiredAuthLevel = AuthLevel.USER;
     }
+
+    public static final String PROP_DISPLAY_NAME = "Pin | Unpin (thread-only)";
 
     private static PinOrUnpin _instance;
 
@@ -44,6 +48,11 @@ public class PinOrUnpin extends Action {
     private static final Emoji cross = Emoji.fromUnicode("❌");
     private static final Emoji white_exclamation_mark = Emoji.fromUnicode("❕");
     private static final Emoji exclamation_mark = Emoji.fromUnicode("❗");
+
+    @Override
+    public CommandData getContextCommandLoadConfiguration() {
+        return Commands.message(PinOrUnpin.PROP_DISPLAY_NAME);
+    }
 
     @Override
     public AuthResult authorizeContext(GenericEvent request, ActionRequestType requestType) {

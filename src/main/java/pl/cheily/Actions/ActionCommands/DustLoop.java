@@ -8,6 +8,10 @@ import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import pl.cheily.Actions.Action;
 import pl.cheily.Actions.ActionRequestType;
 import pl.cheily.Actions.ActionResult;
@@ -51,6 +55,24 @@ public class DustLoop extends Action {
     public static DustLoop instance() {
         if ( _instance == null ) _instance = new DustLoop();
         return _instance;
+    }
+
+    @Override
+    public CommandData getContextCommandLoadConfiguration() {
+        return Commands.slash(DustLoop.PROP_NAME, "Polls data from dustloop.")
+                .addSubcommands(
+                        new SubcommandData(DustLoop.PROP_CMD_LIST, "Lists a character's moves by expected input.")
+                                .addOption(OptionType.STRING, DustLoop.PROP_ARG_CHAR, "Character to poll", true)
+                                .addOption(OptionType.STRING, DustLoop.PROP_ARG_WIKI, "Wiki to poll if not GBVSR by default", false),
+                        new SubcommandData(DustLoop.PROP_CMD_DATA, "Returns a move's detailed data.")
+                                .addOption(OptionType.STRING, DustLoop.PROP_ARG_CHAR, "Character to poll", true)
+                                .addOption(OptionType.STRING, DustLoop.PROP_ARG_MOVE, "Move by input (strictly the same as on wiki)", true)
+                                .addOption(OptionType.STRING, DustLoop.PROP_ARG_WIKI, "Wiki to poll if not GBVSR by default", false)//,
+//                                new SubcommandData(DustLoop.PROP_CMD_EXTRA, "Input a full command on your own.")
+//                                        .addOption(OptionType.STRING, DustLoop.PROP_ARG_INPUT, "Your input. Same as CLI, barring the filename.", true),
+//                                new SubcommandData(DustLoop.PROP_CMD_HELP, "Search help for your input.")
+//                                        .addOption(OptionType.STRING, DustLoop.PROP_ARG_INPUT, "Your input. Same as CLI, barring the filename.", true)
+                );
     }
 
     @Override

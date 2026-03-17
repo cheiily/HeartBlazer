@@ -6,3 +6,4 @@ owner = "302388837525487617"
 owner_bypass = true
 administrators = []
 moderators = []
+load_commands = ["pin | unpin", "ping", "reload", "sleep", "dustloop"]
