@@ -24,6 +24,8 @@ public class Config {
 
     public static List<String> moderatorWhitelist = List.of();
 
+    public static int dustloopTimeout = 0;
+
 
     public static void load() {
         Toml toml = new Toml().read(new File("config.toml"));
@@ -35,5 +37,6 @@ public class Config {
         administratorWhitelist = toml.getList("administrators");
         moderatorWhitelist = toml.getList("moderators");
         version = toml.getString("version");
+        dustloopTimeout = toml.getLong("dustloop_timeout", 0L).intValue();
     }
 }

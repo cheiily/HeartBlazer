@@ -11,6 +11,7 @@ import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import pl.cheily.Actions.Action;
 import pl.cheily.Actions.ActionRequestType;
 import pl.cheily.Actions.ActionResult;
+import pl.cheily.Config;
 
 import java.awt.*;
 import java.io.ByteArrayOutputStream;
@@ -28,6 +29,9 @@ public class DustLoop extends Action {
         this.acceptedRequestTypes = Set.of(
                 ActionRequestType.SLASH_COMMAND
         );
+
+        if (Config.dustloopTimeout != 0)
+            Model.INSTANCE.setTimeout(Config.dustloopTimeout);
     }
 
     public static final String PROP_NAME = "dust";
